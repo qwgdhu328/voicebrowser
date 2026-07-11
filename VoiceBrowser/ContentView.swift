@@ -4,7 +4,7 @@ import WebKit
 struct ContentView: View {
     @StateObject private var speechManager = SpeechManager()
 
-    @State private var webView = WKWebView()
+    @State private var webView = WKWebView(frame: .zero)
     @State private var urlString = ""
     @State private var isLoading = false
     @State private var canGoBack = false

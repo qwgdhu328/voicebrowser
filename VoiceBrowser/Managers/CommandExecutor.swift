@@ -61,8 +61,9 @@ class CommandExecutor {
                 return false;
             })()
             """
-            let result: Bool? = try? await webView.evaluateJavaScript(js) as? Bool
-            return result == true ? nil : "Elemento '\(text)' non trovato"
+            let result = try? await webView.evaluateJavaScript(js)
+            let found = result as? Bool ?? false
+            return found ? nil : "Elemento '\(text)' non trovato"
 
         case .goBack:
             if webView.canGoBack { webView.goBack() }
@@ -78,7 +79,8 @@ class CommandExecutor {
 
         case .read:
             let js = "document.body.innerText || document.body.textContent || ''"
-            if let text = try? await webView.evaluateJavaScript(js) as? String {
+            let raw = try? await webView.evaluateJavaScript(js)
+            if let text = raw as? String {
                 let cleaned = text
                     .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
                     .trimmingCharacters(in: .whitespacesAndNewlines)
