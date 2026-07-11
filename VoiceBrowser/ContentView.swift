@@ -13,7 +13,8 @@ struct ContentView: View {
     @State private var statusMessage: String?
     @State private var showStatus = false
     @State private var isProcessing = false
-    @State private var authChecked = false
+    @State private var showCommandBar = false
+    @State private var commandText = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,6 +40,11 @@ struct ContentView: View {
                 .padding(.vertical, 4)
             }
 
+            if showCommandBar {
+                commandInputBar
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             ControlBar(
                 urlString: $urlString,
                 isLoading: isLoading,
@@ -46,21 +52,49 @@ struct ContentView: View {
                 canGoForward: canGoForward,
                 isListening: speechManager.isListening,
                 transcription: speechManager.transcription,
+                showCommandBar: showCommandBar,
                 onNavigate: { url in loadURL(url) },
                 onGoBack: { webView.goBack() },
                 onGoForward: { webView.goForward() },
                 onRefresh: { webView.reload() },
-                onMicTap: handleMicTap
+                onMicTap: handleMicTap,
+                onToggleCommand: { withAnimation { showCommandBar.toggle() } }
             )
         }
         .ignoresSafeArea(.keyboard)
         .onAppear {
             loadURL("https://google.com")
             Task {
-                authChecked = true
                 _ = await speechManager.requestAuthorization()
             }
         }
+    }
+
+    private var commandInputBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "wand.and.stars")
+                .foregroundStyle(.tint)
+                .font(.caption)
+            TextField("Digita un comando (es. \"vai su youtube\")...", text: $commandText)
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .padding(8)
+                .background(.regularMaterial)
+                .clipShape(.rect(cornerRadius: 8))
+            Button {
+                let text = commandText
+                commandText = ""
+                processVoiceCommand(text)
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.tint)
+            }
+            .disabled(commandText.trimmingCharacters(in: .whitespaces).isEmpty || isProcessing)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial)
     }
 
     private func statusBanner(_ text: String) -> some View {
@@ -98,8 +132,9 @@ struct ContentView: View {
         }
 
         guard speechManager.isAuthorized else {
-            statusMessage = "Permetti l'accesso al microfono nelle Impostazioni"
+            statusMessage = "Microfono non disponibile. Usa il comando testuale (⌨) sopra."
             withAnimation { showStatus = true }
+            showCommandBar = true
             return
         }
 

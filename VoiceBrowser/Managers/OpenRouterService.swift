@@ -4,7 +4,7 @@ class OpenRouterService {
     static let shared = OpenRouterService()
 
     private let baseURL = "https://openrouter.ai/api/v1/chat/completions"
-    private let apiKey: String
+    private let apiKey: String?
     private let model = "tencent/hy3:free"
 
     private let systemPrompt = """
@@ -41,13 +41,14 @@ class OpenRouterService {
     """
 
     private init() {
-        guard let key = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"], !key.isEmpty else {
-            fatalError("Set OPENROUTER_API_KEY environment variable")
-        }
-        self.apiKey = key
+        self.apiKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"]
     }
 
     func sendCommand(_ text: String) async throws -> String {
+        guard let apiKey = apiKey, !apiKey.isEmpty else {
+            throw OpenRouterError.missingKey
+        }
+
         let messages: [[String: String]] = [
             ["role": "system", "content": systemPrompt],
             ["role": "user", "content": text]
@@ -78,5 +79,16 @@ class OpenRouterService {
         let choices = json?["choices"] as? [[String: Any]]
         let message = choices?.first?["message"] as? [String: Any]
         return message?["content"] as? String ?? ""
+    }
+}
+
+enum OpenRouterError: LocalizedError {
+    case missingKey
+
+    var errorDescription: String? {
+        switch self {
+        case .missingKey:
+            return "API key non configurata. Imposta OPENROUTER_API_KEY come variabile d'ambiente."
+        }
     }
 }

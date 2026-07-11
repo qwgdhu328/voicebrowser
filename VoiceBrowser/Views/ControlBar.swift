@@ -7,11 +7,13 @@ struct ControlBar: View {
     let canGoForward: Bool
     let isListening: Bool
     let transcription: String
+    let showCommandBar: Bool
     let onNavigate: (String) -> Void
     let onGoBack: () -> Void
     let onGoForward: () -> Void
     let onRefresh: () -> Void
     let onMicTap: () -> Void
+    let onToggleCommand: () -> Void
 
     @State private var showURLSheet = false
     @State private var editURL = ""
@@ -46,6 +48,7 @@ struct ControlBar: View {
                     .clipShape(.rect(cornerRadius: 8))
                 }
 
+                commandToggle
                 micButton
             }
             .padding(.horizontal, 8)
@@ -115,6 +118,17 @@ struct ControlBar: View {
                 .clipShape(.circle)
         }
         .disabled(disabled)
+    }
+
+    private var commandToggle: some View {
+        Button(action: onToggleCommand) {
+            Image(systemName: showCommandBar ? "keyboard.fill" : "keyboard")
+                .font(.caption)
+                .foregroundStyle(showCommandBar ? .white : .primary)
+                .frame(width: 32, height: 32)
+                .background(showCommandBar ? AppTint : .regularMaterial)
+                .clipShape(.circle)
+        }
     }
 
     private var micButton: some View {
