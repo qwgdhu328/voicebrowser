@@ -16,9 +16,9 @@ jobs:
       matrix:
         config:
           - sdk: iphonesimulator
-            output: VoiceBrowser-simulator.app
+            output: VoiceBrowser-simulator
           - sdk: iphoneos
-            output: VoiceBrowser-device.app
+            output: VoiceBrowser
 
     steps:
       - uses: actions/checkout@v4
@@ -56,15 +56,23 @@ jobs:
       - name: Prepare artifacts
         if: always()
         run: |
-          mkdir -p /tmp/artifacts
           APP=$(find build -name "*.app" -type d 2>/dev/null | head -1)
-          if [ -n "$APP" ]; then
-            ditto "$APP" /tmp/artifacts/
-            echo "Artifact: $APP"
-          else
-            echo "No .app found in build/"
+          if [ -z "$APP" ]; then
+            mkdir -p /tmp/artifacts
             cp build.log /tmp/artifacts/build.log 2>/dev/null || true
+            echo "No .app found"
+            exit 0
           fi
+          if [ "${{ matrix.config.sdk }}" = "iphoneos" ]; then
+            mkdir -p /tmp/artifacts/Payload
+            ditto "$APP" /tmp/artifacts/Payload/
+            cd /tmp/artifacts && zip -r VoiceBrowser.ipa Payload/
+            rm -rf /tmp/artifacts/Payload
+          else
+            mkdir -p /tmp/artifacts
+            ditto "$APP" /tmp/artifacts/
+          fi
+          echo "Artifact: $APP"
 
       - name: Upload artifacts
         if: always()
