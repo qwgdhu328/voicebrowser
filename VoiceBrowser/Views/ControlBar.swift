@@ -126,7 +126,7 @@ struct ControlBar: View {
                 .font(.caption)
                 .foregroundStyle(showCommandBar ? .white : .primary)
                 .frame(width: 32, height: 32)
-                .background(showCommandBar ? AppTint : .regularMaterial)
+                .background(showCommandBar ? AnyShapeStyle(AppTint) : AnyShapeStyle(.regularMaterial))
                 .clipShape(.circle)
         }
     }
