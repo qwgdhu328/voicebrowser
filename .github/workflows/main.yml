@@ -16,7 +16,9 @@ jobs:
       matrix:
         config:
           - sdk: iphonesimulator
-            output: VoiceBrowser.app
+            output: VoiceBrowser-simulator.app
+          - sdk: iphoneos
+            output: VoiceBrowser-device.app
 
     steps:
       - uses: actions/checkout@v4
@@ -57,7 +59,7 @@ jobs:
           mkdir -p /tmp/artifacts
           APP=$(find build -name "*.app" -type d 2>/dev/null | head -1)
           if [ -n "$APP" ]; then
-            ditto "$APP" /tmp/artifacts/VoiceBrowser.app
+            ditto "$APP" /tmp/artifacts/
             echo "Artifact: $APP"
           else
             echo "No .app found in build/"
