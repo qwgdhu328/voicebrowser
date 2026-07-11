@@ -29,23 +29,43 @@ jobs:
 
       - name: Build for ${{ matrix.config.sdk }}
         run: |
+          set -o pipefail
           xcodebuild -project VoiceBrowser.xcodeproj \
             -scheme VoiceBrowser \
             -sdk ${{ matrix.config.sdk }} \
             -arch arm64 \
             -configuration Release \
+            SYMROOT=$PWD/build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            build | tee build.log
+            build 2>&1 | tee build.log
+
+      - name: Debug - show build artifacts
+        if: always()
+        run: |
+          echo "=== Build log (last 50 lines) ==="
+          tail -50 build.log 2>/dev/null || echo "No build.log"
+          echo "=== Files in build/ ==="
+          find build -name "*.app" -type d 2>/dev/null || echo "No .app found"
+          echo "=== Full build tree ==="
+          find build -maxdepth 4 2>/dev/null || echo "No build dir"
 
       - name: Prepare artifacts
+        if: always()
         run: |
           mkdir -p /tmp/artifacts
-          ditto build/Release-iphonesimulator/VoiceBrowser.app /tmp/artifacts/VoiceBrowser.app
-          cp build.log /tmp/artifacts/ 2>/dev/null || true
+          APP=$(find build -name "*.app" -type d 2>/dev/null | head -1)
+          if [ -n "$APP" ]; then
+            ditto "$APP" /tmp/artifacts/VoiceBrowser.app
+            echo "Artifact: $APP"
+          else
+            echo "No .app found in build/"
+            cp build.log /tmp/artifacts/build.log 2>/dev/null || true
+          fi
 
       - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.config.output }}
