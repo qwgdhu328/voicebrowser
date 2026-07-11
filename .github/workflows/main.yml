@@ -12,13 +12,10 @@ jobs:
   build:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         config:
-          - sdk: iphoneos
-            archive: true
-            output: VoiceBrowser.ipa
           - sdk: iphonesimulator
-            archive: false
             output: VoiceBrowser.app
 
     steps:
@@ -32,57 +29,21 @@ jobs:
 
       - name: Build for ${{ matrix.config.sdk }}
         run: |
-          if [ "${{ matrix.config.archive }}" = "true" ]; then
-            xcodebuild -project VoiceBrowser.xcodeproj \
-              -scheme VoiceBrowser \
-              -sdk ${{ matrix.config.sdk }} \
-              -configuration Release \
-              -archivePath /tmp/VoiceBrowser.xcarchive \
-              CODE_SIGN_IDENTITY="" \
-              CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGNING_ALLOWED=NO \
-              archive | tee build_device.log
-          else
-            xcodebuild -project VoiceBrowser.xcodeproj \
-              -scheme VoiceBrowser \
-              -sdk ${{ matrix.config.sdk }} \
-              -arch arm64 \
-              -configuration Release \
-              CODE_SIGN_IDENTITY="" \
-              CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGNING_ALLOWED=NO \
-              build | tee build_sim.log
-          fi
-        continue-on-error: true
-
-      - name: Export IPA
-        if: matrix.config.archive == true
-        run: |
-          mkdir -p /tmp/ipa
-          xcodebuild -exportArchive \
-            -archivePath /tmp/VoiceBrowser.xcarchive \
-            -exportPath /tmp/ipa \
-            -exportOptionsPlist <(echo '<?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0"><dict>
-              <key>method</key><string>development</string>
-              <key>signingStyle</key><string>manual</string>
-              <key>signingCertificate</key><string>-</string>
-              <key>teamID</key><string></string>
-            </dict></plist>')
+          xcodebuild -project VoiceBrowser.xcodeproj \
+            -scheme VoiceBrowser \
+            -sdk ${{ matrix.config.sdk }} \
+            -arch arm64 \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tee build.log
 
       - name: Prepare artifacts
         run: |
           mkdir -p /tmp/artifacts
-          if [ "${{ matrix.config.archive }}" = "true" ]; then
-            cp /tmp/ipa/*.ipa /tmp/artifacts/ || true
-            cp build_device.log /tmp/artifacts/ 2>/dev/null || true
-          else
-            cp -R build/Release-iphonesimulator/VoiceBrowser.app /tmp/artifacts/ 2>/dev/null || true
-            mkdir -p /tmp/artifacts/sim
-            ditto build/Release-iphonesimulator/VoiceBrowser.app /tmp/artifacts/sim/VoiceBrowser.app 2>/dev/null || true
-            cp build_sim.log /tmp/artifacts/ 2>/dev/null || true
-          fi
+          ditto build/Release-iphonesimulator/VoiceBrowser.app /tmp/artifacts/VoiceBrowser.app
+          cp build.log /tmp/artifacts/ 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
