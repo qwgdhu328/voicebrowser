@@ -6,8 +6,8 @@ import AVFoundation
 class SpeechManager: ObservableObject {
     private let recognizer: SFSpeechRecognizer?
     private var recognitionTask: SFSpeechRecognitionTask?
-    private let audioEngine = AVAudioEngine()
-    private let synthesizer = AVSpeechSynthesizer()
+    private lazy var audioEngine = AVAudioEngine()
+    private lazy var synthesizer = AVSpeechSynthesizer()
 
     @Published var isAuthorized = false
     @Published var transcription = ""

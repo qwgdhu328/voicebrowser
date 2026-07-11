@@ -2,9 +2,9 @@ import SwiftUI
 import WebKit
 
 struct ContentView: View {
-    @StateObject private var speechManager = SpeechManager()
-
     @State private var webView = WKWebView(frame: .zero)
+    @State private var speechManager: SpeechManager?
+
     @State private var urlString = ""
     @State private var isLoading = false
     @State private var canGoBack = false
@@ -50,8 +50,8 @@ struct ContentView: View {
                 isLoading: isLoading,
                 canGoBack: canGoBack,
                 canGoForward: canGoForward,
-                isListening: speechManager.isListening,
-                transcription: speechManager.transcription,
+                isListening: speechManager?.isListening ?? false,
+                transcription: speechManager?.transcription ?? "",
                 showCommandBar: showCommandBar,
                 onNavigate: { url in loadURL(url) },
                 onGoBack: { webView.goBack() },
@@ -64,9 +64,6 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard)
         .onAppear {
             loadURL("https://google.com")
-            Task {
-                _ = await speechManager.requestAuthorization()
-            }
         }
     }
 
@@ -125,20 +122,34 @@ struct ContentView: View {
         webView.load(URLRequest(url: url))
     }
 
+    private func ensureSpeechManager() {
+        guard speechManager == nil else { return }
+        speechManager = SpeechManager()
+    }
+
     private func handleMicTap() {
-        if speechManager.isListening {
-            speechManager.stopListening()
+        ensureSpeechManager()
+        guard let sm = speechManager else { return }
+
+        if sm.isListening {
+            sm.stopListening()
             return
         }
 
-        guard speechManager.isAuthorized else {
-            statusMessage = "Microfono non disponibile. Usa il comando testuale (⌨) sopra."
-            withAnimation { showStatus = true }
-            showCommandBar = true
+        if !sm.isAuthorized {
+            Task {
+                let granted = await sm.requestAuthorization()
+                if !granted {
+                    statusMessage = "Microfono non disponibile. Usa il comando testuale (⌨) sopra."
+                    withAnimation { showStatus = true }
+                    showCommandBar = true
+                    return
+                }
+            }
             return
         }
 
-        speechManager.startListening { text in
+        sm.startListening { text in
             Task { @MainActor in
                 guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
                 self.processVoiceCommand(text)
@@ -159,7 +170,8 @@ struct ContentView: View {
                 let feedback = await CommandExecutor(webView: webView).execute(command)
 
                 if let feedback = feedback {
-                    speechManager.speak(feedback)
+                    ensureSpeechManager()
+                    speechManager?.speak(feedback)
                     statusMessage = feedback
                     withAnimation { showStatus = true }
                 }
