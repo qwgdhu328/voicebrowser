@@ -20,7 +20,7 @@ targets:
           - "Info.plist"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.voicebrowser.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.voicebrowser.voicebrowser
         INFOPLIST_FILE: VoiceBrowser/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         DEVELOPMENT_TEAM: ""
