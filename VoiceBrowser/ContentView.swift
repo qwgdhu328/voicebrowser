@@ -104,8 +104,10 @@ struct ContentView: View {
         }
 
         speechManager.startListening { text in
-            guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-            processVoiceCommand(text)
+            Task { @MainActor in
+                guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                self.processVoiceCommand(text)
+            }
         }
     }
 

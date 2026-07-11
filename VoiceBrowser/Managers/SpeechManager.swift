@@ -55,21 +55,21 @@ class SpeechManager: ObservableObject {
         try? audioEngine.start()
         isListening = true
 
-        recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
-            guard let self = self else { return }
+        recognitionTask = recognizer.recognitionTask(with: request) { result, error in
+            Task { @MainActor in
+                if let result = result {
+                    let text = result.bestTranscription.formattedString
+                    self.transcription = text
 
-            if let result = result {
-                let text = result.bestTranscription.formattedString
-                self.transcription = text
-
-                if result.isFinal {
-                    self.stopListening()
-                    completion(text)
+                    if result.isFinal {
+                        self.stopListening()
+                        completion(text)
+                    }
                 }
-            }
 
-            if error != nil {
-                self.stopListening()
+                if error != nil {
+                    self.stopListening()
+                }
             }
         }
     }

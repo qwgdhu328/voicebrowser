@@ -15,10 +15,14 @@ targets:
     type: application
     platform: iOS
     sources:
-      - VoiceBrowser
+      - path: VoiceBrowser
+        excludes:
+          - "Info.plist"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.voicebrowser.app
         INFOPLIST_FILE: VoiceBrowser/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         DEVELOPMENT_TEAM: ""
+        TARGETED_DEVICE_FAMILY: "1"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
