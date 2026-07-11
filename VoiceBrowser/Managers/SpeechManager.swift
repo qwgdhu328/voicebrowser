@@ -18,8 +18,16 @@ class SpeechManager: ObservableObject {
     }
 
     func requestAuthorization() async -> Bool {
-        let speechStatus = await SFSpeechRecognizer.requestAuthorization()
-        let audioGranted = await AVAudioSession.sharedInstance().requestRecordPermission()
+        let speechStatus = await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { status in
+                continuation.resume(returning: status)
+            }
+        }
+        let audioGranted = await withCheckedContinuation { continuation in
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                continuation.resume(returning: granted)
+            }
+        }
         isAuthorized = speechStatus == .authorized && audioGranted
         return isAuthorized
     }
